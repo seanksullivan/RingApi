@@ -51,15 +51,14 @@ namespace KoenZomers.Ring.Api
         /// <param name="cookieContainer">Cookies which have been recorded for this session</param>
         /// <param name="timeout">Timeout in milliseconds on how long the request may take. Default = 60000 = 60 seconds.</param>
         /// <returns>The website contents returned by the webserver after posting the data</returns>
-        public static async Task<string> FormPost(Uri url, Dictionary<string, string> formFields, NameValueCollection headerFields, CookieContainer cookieContainer, int timeout = 60000)
+        public static async Task<string> FormPost(Uri url, Dictionary<string, string> formFields, NameValueCollection headerFields, 
+            CookieContainer cookieContainer, HttpWebRequest mockRequest = null, int timeout = 60000)
         {
-            // Construct the POST request which performs the login
-            var request = (HttpWebRequest)WebRequest.Create(url);
-            request.Method = WebRequestMethods.Http.Post;
-            request.ServicePoint.Expect100Continue = false;
-            request.CookieContainer = cookieContainer;
-            request.Timeout = timeout;
-            request.Headers.Add(headerFields);
+            //request.Method = WebRequestMethods.Http.Post;
+            //request.ServicePoint.Expect100Continue = false;
+            //request.CookieContainer = cookieContainer;
+            //request.Timeout = timeout;
+            //request.Headers.Add(headerFields);
 
             // Construct POST data
             var postData = new StringBuilder();
@@ -72,11 +71,14 @@ namespace KoenZomers.Ring.Api
             // Convert the POST data to a byte array
             var postDataByteArray = Encoding.UTF8.GetBytes(postData.ToString());
 
-            // Set the ContentType property of the WebRequest
-            request.ContentType = "application/x-www-form-urlencoded; charset=UTF-8";
+            // Construct the HttpWebRequest - if not null we will use the supplied HttpWebRequest object - which is probably a Mock
+            var request = mockRequest ?? CreateHttpWebRequest(url, headerFields, cookieContainer, postDataByteArray.Length, timeout);
 
-            // Set the ContentLength property of the WebRequest.
-            request.ContentLength = postDataByteArray.Length;
+            //// Set the ContentType property of the WebRequest
+            //request.ContentType = "application/x-www-form-urlencoded; charset=UTF-8";
+
+            //// Set the ContentLength property of the WebRequest.
+            //request.ContentLength = postDataByteArray.Length;
 
             // Get the request stream
             var dataStream = await request.GetRequestStreamAsync();
@@ -100,6 +102,21 @@ namespace KoenZomers.Ring.Api
 
             var reader = new StreamReader(dataStream);
             return await reader.ReadToEndAsync();
+        }
+
+        private static HttpWebRequest CreateHttpWebRequest(Uri url, NameValueCollection headerFields, CookieContainer cookieContainer, int contentLength, int timeout = 60000)
+        {
+            var request = (HttpWebRequest)WebRequest.Create(url);
+
+            request.Method = WebRequestMethods.Http.Post;
+            request.ServicePoint.Expect100Continue = false;
+            request.CookieContainer = cookieContainer;
+            request.Timeout = timeout;
+            request.Headers.Add(headerFields);
+            request.ContentType = "application/x-www-form-urlencoded; charset=UTF-8";
+            request.ContentLength = contentLength;
+
+            return request;
         }
 
         /// <summary>

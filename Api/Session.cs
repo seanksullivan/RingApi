@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.IO;
+using System.Net;
 
 namespace KoenZomers.Ring.Api
 {
@@ -42,19 +43,25 @@ namespace KoenZomers.Ring.Api
         /// </summary>
         public string AuthenticationToken { get; private set; }
 
-        #endregion
-
-        #region Fields
-
-
-
-        #endregion
-
-        #region Constructors
-
         /// <summary>
-        /// Initiates a new session to the Ring API
+        /// Utilized to support unit test via Moq (mocking).
+        /// A mocked HttpWebRequest can be passed-in
         /// </summary>
+        public HttpWebRequest Request { get; set; }
+
+        #endregion
+
+            #region Fields
+
+
+
+            #endregion
+
+            #region Constructors
+
+            /// <summary>
+            /// Initiates a new session to the Ring API
+            /// </summary>
         public Session(string username, string password)
         {
             Username = username;
@@ -132,7 +139,8 @@ namespace KoenZomers.Ring.Api
                                                             { "X-API-LANG", "en" },
                                                             { "Authorization", $"Basic {CredentialsEncoded}" }
                                                         },
-                                                        null);
+                                                        null,
+                                                        Request);
 
             // Deserialize the JSON result into a typed object
             var session = JsonConvert.DeserializeObject<Entities.Session>(response);
