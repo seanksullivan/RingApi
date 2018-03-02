@@ -20,12 +20,15 @@ namespace KoenZomers.Ring.Api
         /// <param name="cookieContainer">Cookies which have been recorded for this session</param>
         /// <param name="timeout">Timeout in milliseconds on how long the request may take. Default = 60000 = 60 seconds.</param>
         /// <returns>Contents of the result returned by the webserver</returns>
-        public static async Task<string> GetContents(Uri url, CookieContainer cookieContainer, int timeout = 60000)
+        public static async Task<string> GetContents(Uri url, CookieContainer cookieContainer, HttpWebRequest mockRequest = null, int timeout = 60000)
         {
             // Construct the request
-            var request = (HttpWebRequest)WebRequest.Create(url);
-            request.CookieContainer = cookieContainer;
-            request.Timeout = timeout;
+            // Construct the HttpWebRequest - if not null we will use the supplied HttpWebRequest object - which is probably a Mock
+            var request = mockRequest ?? CreateHttpWebRequestGetContents(url, cookieContainer, timeout);
+
+            //var request = (HttpWebRequest)WebRequest.Create(url);
+            //request.CookieContainer = cookieContainer;
+            //request.Timeout = timeout;
 
             // Send the request to the webserver
             var response = await request.GetResponseAsync();
@@ -72,7 +75,7 @@ namespace KoenZomers.Ring.Api
             var postDataByteArray = Encoding.UTF8.GetBytes(postData.ToString());
 
             // Construct the HttpWebRequest - if not null we will use the supplied HttpWebRequest object - which is probably a Mock
-            var request = mockRequest ?? CreateHttpWebRequest(url, headerFields, cookieContainer, postDataByteArray.Length, timeout);
+            var request = mockRequest ?? CreateHttpWebRequestFormPost(url, headerFields, cookieContainer, postDataByteArray.Length, timeout);
 
             //// Set the ContentType property of the WebRequest
             //request.ContentType = "application/x-www-form-urlencoded; charset=UTF-8";
@@ -104,7 +107,17 @@ namespace KoenZomers.Ring.Api
             return await reader.ReadToEndAsync();
         }
 
-        private static HttpWebRequest CreateHttpWebRequest(Uri url, NameValueCollection headerFields, CookieContainer cookieContainer, int contentLength, int timeout = 60000)
+        private static HttpWebRequest CreateHttpWebRequestGetContents(Uri url, CookieContainer cookieContainer, int timeout = 60000)
+        {
+            var request = (HttpWebRequest)WebRequest.Create(url);
+
+            request.CookieContainer = cookieContainer;
+            request.Timeout = timeout;
+
+            return request;
+        }
+
+        private static HttpWebRequest CreateHttpWebRequestFormPost(Uri url, NameValueCollection headerFields, CookieContainer cookieContainer, int contentLength, int timeout = 60000)
         {
             var request = (HttpWebRequest)WebRequest.Create(url);
 

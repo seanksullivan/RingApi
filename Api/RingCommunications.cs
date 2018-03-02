@@ -47,21 +47,27 @@ namespace KoenZomers.Ring.Api
         /// Utilized to support unit test via Moq (mocking).
         /// A mocked HttpWebRequest can be passed-in
         /// </summary>
-        public HttpWebRequest Request { get; set; }
+        public HttpWebRequest AuthRequest { get; set; }
+
+        /// <summary>
+        /// Utilized to support unit test via Moq (mocking).
+        /// A mocked HttpWebRequest can be passed-into supply the GetRingDevices() response
+        /// </summary>
+        public HttpWebRequest DevicesRequest { get; set; }
+
+        #endregion                                                               
+
+        #region Fields
+
+
 
         #endregion
 
-            #region Fields
+        #region Constructors
 
-
-
-            #endregion
-
-            #region Constructors
-
-            /// <summary>
-            /// Initiates a new session to the Ring API
-            /// </summary>
+        /// <summary>
+        /// Initiates a new session to the Ring API
+        /// </summary>
         public RingCommunications(string username, string password)
         {
             Username = username;
@@ -140,7 +146,7 @@ namespace KoenZomers.Ring.Api
                                                             { "Authorization", $"Basic {CredentialsEncoded}" }
                                                         },
                                                         null,
-                                                        Request);
+                                                        AuthRequest);
 
             // Deserialize the JSON result into a typed object
             var session = JsonConvert.DeserializeObject<Entities.Session>(response);
@@ -160,7 +166,7 @@ namespace KoenZomers.Ring.Api
                 throw new Exceptions.SessionNotAuthenticatedException();
             }
 
-            var response = await HttpUtility.GetContents(new Uri(RingApiBaseUrl, $"ring_devices?auth_token={AuthenticationToken}&api_version=9"), null);
+            var response = await HttpUtility.GetContents(new Uri(RingApiBaseUrl, $"ring_devices?auth_token={AuthenticationToken}&api_version=9"), null, DevicesRequest);
 
             var devices = JsonConvert.DeserializeObject<Entities.Devices>(response);
             return devices;
