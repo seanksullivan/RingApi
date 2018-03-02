@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Configuration;
 using System.Threading.Tasks;
 using System.IO;
+using KoenZomers.Ring.Api;
 
 namespace KoenZomers.Ring.UnitTest
 {
@@ -26,7 +27,7 @@ namespace KoenZomers.Ring.UnitTest
         [TestMethod]
         public async Task AuthenticateSuccessTest()
         {
-            var session = new Api.Session(Username, Password);
+            var session = new RingCommunications(Username, Password);
 
             var authResult = await session.Authenticate();
             Assert.IsFalse(string.IsNullOrEmpty(authResult.Profile.AuthenticationToken), "Failed to authenticate");
@@ -40,7 +41,7 @@ namespace KoenZomers.Ring.UnitTest
         [ExpectedException(typeof(System.Net.WebException))]
         public async Task AuthenticateFailTest()
         {
-            var session = new Api.Session("test@test.com", "someinvalidpassword");
+            var session = new RingCommunications("test@test.com", "someinvalidpassword");
 
             await session.Authenticate();
         }
@@ -51,7 +52,7 @@ namespace KoenZomers.Ring.UnitTest
         [TestMethod]
         public void ValidateEncodedCredentialsTest()
         {
-            var session = new Api.Session(Username, Password);
+            var session = new RingCommunications(Username, Password);
 
             var base64DecodedCredentials = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(session.CredentialsEncoded));
             Assert.AreEqual(base64DecodedCredentials, $"{Username}:{Password}", "Base64 Credential Decoding failed");
@@ -63,7 +64,7 @@ namespace KoenZomers.Ring.UnitTest
         [TestMethod]
         public async Task GetDevicesTest()
         {
-            var session = new Api.Session(Username, Password);
+            var session = new RingCommunications(Username, Password);
             await session.Authenticate();
 
             var devices = await session.GetRingDevices();
@@ -77,7 +78,7 @@ namespace KoenZomers.Ring.UnitTest
         [ExpectedException(typeof(Api.Exceptions.SessionNotAuthenticatedException))]
         public async Task GetDevicesUnauthenticatedTest()
         {
-            var session = new Api.Session(Username, Password);
+            var session = new RingCommunications(Username, Password);
             await session.GetRingDevices();
         }
 
@@ -87,7 +88,7 @@ namespace KoenZomers.Ring.UnitTest
         [TestMethod]
         public async Task GetDoorbotsHistoryTest()
         {
-            var session = new Api.Session(Username, Password);
+            var session = new RingCommunications(Username, Password);
             await session.Authenticate();
 
             var doorbotHistory = await session.GetDoorbotsHistory();
@@ -100,7 +101,7 @@ namespace KoenZomers.Ring.UnitTest
         [TestMethod]
         public async Task GetDoorbotsHistoryRecordingByIdTest()
         {
-            var session = new Api.Session(Username, Password);
+            var session = new RingCommunications(Username, Password);
             await session.Authenticate();
 
             var doorbotHistory = await session.GetDoorbotsHistory();
@@ -120,7 +121,7 @@ namespace KoenZomers.Ring.UnitTest
         [TestMethod]
         public async Task GetDoorbotsHistoryRecordingByInstanceTest()
         {
-            var session = new Api.Session(Username, Password);
+            var session = new RingCommunications(Username, Password);
             await session.Authenticate();
 
             var doorbotHistory = await session.GetDoorbotsHistory();

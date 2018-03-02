@@ -9,7 +9,7 @@ using System.Net;
 
 namespace KoenZomers.Ring.Api
 {
-    public class Session
+    public class RingCommunications
     {
         #region Properties
 
@@ -62,7 +62,7 @@ namespace KoenZomers.Ring.Api
             /// <summary>
             /// Initiates a new session to the Ring API
             /// </summary>
-        public Session(string username, string password)
+        public RingCommunications(string username, string password)
         {
             Username = username;
             Password = password;

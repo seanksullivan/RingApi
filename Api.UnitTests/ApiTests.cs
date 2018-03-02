@@ -7,6 +7,9 @@ using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json;
+using KoenZomers.Ring.Api;
+using KoenZomers.Ring.Api.Entities;
+using System.Collections.Generic;
 
 namespace Api.UnitTests
 {
@@ -24,14 +27,19 @@ namespace Api.UnitTests
             var mockHttpWebRequest = CreateMockHttpWebRequest(HttpStatusCode.NotModified, "A-OK", expectedResponseBytes);
 
             // ACT
-            var session = new KoenZomers.Ring.Api.Session("test@test.com", "someinvalidpassword") { Request = mockHttpWebRequest };
+            var session = new RingCommunications("test@test.com", "someinvalidpassword") { Request = mockHttpWebRequest };
             var actualSessionObject = session.Authenticate().GetAwaiter().GetResult();
 
             //ASSERT
-            PropertyValuesAreEquals(expectedSessionObject.Profile, actualSessionObject.Profile);
+            ObjectCompare(expectedSessionObject, actualSessionObject);
         }
 
-        private static void PropertyValuesAreEquals(object expected, object actual)
+        /// <summary>
+        /// Compare Objects and all fields within.
+        /// </summary>
+        /// <param name="expected"></param>
+        /// <param name="actual"></param>
+        private static void ObjectCompare(object expected, object actual)
         {
             PropertyInfo[] properties = expected.GetType().GetProperties();
             foreach (PropertyInfo property in properties)
@@ -39,9 +47,15 @@ namespace Api.UnitTests
                 object expectedValue = property.GetValue(expected, null);
                 object actualValue = property.GetValue(actual, null);
 
-                if (actualValue is IList)
+                if (expectedValue is SessionFeatures || expectedValue is Profile)
                 {
-                    CollectionAssert.AreEqual(actualValue as IList, expectedValue as IList);
+                    ObjectCompare(expectedValue, actualValue);
+                    break;
+                }
+
+                if (expectedValue is IList)
+                {
+                    CollectionAssert.AreEqual(expectedValue as IList, actualValue as IList);
                 }
                 else
                 {
@@ -50,6 +64,13 @@ namespace Api.UnitTests
             }
         }
 
+        /// <summary>
+        /// Create a full, Mock object for the HttpWebRequest
+        /// </summary>
+        /// <param name="httpStatusCode"></param>
+        /// <param name="statusDescription"></param>
+        /// <param name="responseBytes"></param>
+        /// <returns></returns>
         private static HttpWebRequest CreateMockHttpWebRequest(HttpStatusCode httpStatusCode, string statusDescription, byte[] responseBytes)
         {
             var requestBytes = Encoding.ASCII.GetBytes("Blah Blah Blah");

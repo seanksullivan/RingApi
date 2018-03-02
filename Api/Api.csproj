@@ -67,7 +67,7 @@
     <Compile Include="Entities\Profile.cs" />
     <Compile Include="Entities\Session.cs" />
     <Compile Include="Exceptions\SessionNotAuthenticatedException.cs" />
-    <Compile Include="Session.cs" />
+    <Compile Include="RingCommunications.cs" />
     <Compile Include="HttpUtility.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
