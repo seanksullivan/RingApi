@@ -22,26 +22,28 @@ namespace KoenZomers.Ring.Api
         /// <returns>Contents of the result returned by the webserver</returns>
         public static async Task<string> GetContents(Uri url, CookieContainer cookieContainer, HttpWebRequest mockRequest = null, int timeout = 60000)
         {
-            // Construct the request
+            var responseFromServer = string.Empty;
+
             // Construct the HttpWebRequest - if not null we will use the supplied HttpWebRequest object - which is probably a Mock
             var request = mockRequest ?? CreateHttpWebRequestGetContents(url, cookieContainer, timeout);
 
-            //var request = (HttpWebRequest)WebRequest.Create(url);
-            //request.CookieContainer = cookieContainer;
-            //request.Timeout = timeout;
-
             // Send the request to the webserver
-            var response = await request.GetResponseAsync();
+            using (var response = await request.GetResponseAsync())
+            {
+                // Get the stream containing content returned by the server.
+                using (var dataStream = response.GetResponseStream())
+                {
+                    if (dataStream == null) return null;
 
-            // Get the stream containing content returned by the server.
-            var dataStream = response.GetResponseStream();
-            if (dataStream == null) return null;
+                    // Open the stream using a StreamReader for easy access.
+                    using (var reader = new StreamReader(dataStream))
+                    {
+                        // Read the content returned
+                        responseFromServer = await reader.ReadToEndAsync();
+                    }
+                }
+            }
 
-            // Open the stream using a StreamReader for easy access.
-            var reader = new StreamReader(dataStream);
-
-            // Read the content returned
-            var responseFromServer = await reader.ReadToEndAsync();
             return responseFromServer;
         }
 
@@ -107,6 +109,13 @@ namespace KoenZomers.Ring.Api
             return await reader.ReadToEndAsync();
         }
 
+        /// <summary>
+        /// Create the HttpWebRequest for the GetContents functionality
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="cookieContainer"></param>
+        /// <param name="timeout"></param>
+        /// <returns></returns>
         private static HttpWebRequest CreateHttpWebRequestGetContents(Uri url, CookieContainer cookieContainer, int timeout = 60000)
         {
             var request = (HttpWebRequest)WebRequest.Create(url);
@@ -117,6 +126,15 @@ namespace KoenZomers.Ring.Api
             return request;
         }
 
+        /// <summary>
+        /// Create the HttpWebRequest for http-Post functionality
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="headerFields"></param>
+        /// <param name="cookieContainer"></param>
+        /// <param name="contentLength"></param>
+        /// <param name="timeout"></param>
+        /// <returns></returns>
         private static HttpWebRequest CreateHttpWebRequestFormPost(Uri url, NameValueCollection headerFields, CookieContainer cookieContainer, int contentLength, int timeout = 60000)
         {
             var request = (HttpWebRequest)WebRequest.Create(url);

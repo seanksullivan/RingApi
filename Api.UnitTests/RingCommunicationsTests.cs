@@ -13,6 +13,10 @@ using System.Collections.Generic;
 
 namespace Api.UnitTests
 {
+    /// <summary>
+    /// Unit tests that take advantage of the Moq framework, using mocks of the HttpWebRequest (and response),
+    /// to provide testing and debugging abilities without actual communications with the ring.com Rest API.
+    /// </summary>
     [TestClass]
     public class RingCommunicationsTests
     {
@@ -166,8 +170,6 @@ namespace Api.UnitTests
             var requestBytes = Encoding.ASCII.GetBytes("Blah Blah Blah");
             Stream requestStream = new MemoryStream();
             Stream responseStream = new MemoryStream();
-            //var servicePointMock = new Mock<ServicePoint>(MockBehavior.Loose);
-
 
             using (var memStream = new MemoryStream(requestBytes))
             {
