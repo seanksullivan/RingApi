@@ -194,7 +194,7 @@ namespace KoenZomers.Ring.Api
         /// </summary>
         /// <param name="doorbotHistoryEvent">The doorbot history event to retrieve the recording for</param>
         /// <returns>Stream containing contents of the recording</returns>
-        public async Task<Stream> GetDoorbotHistoryRecording(Entities.DoorbotHistoryEvent doorbotHistoryEvent)
+        public async Task<byte[]> GetDoorbotHistoryRecording(Entities.DoorbotHistoryEvent doorbotHistoryEvent)
         {
             return await GetDoorbotHistoryRecording(doorbotHistoryEvent.Id);
         }
@@ -204,15 +204,15 @@ namespace KoenZomers.Ring.Api
         /// </summary>
         /// <param name="dingId">Id of the doorbot history event to retrieve the recording for</param>
         /// <returns>Stream containing contents of the recording</returns>
-        public async Task<Stream> GetDoorbotHistoryRecording(string dingId)
+        public async Task<byte[]> GetDoorbotHistoryRecording(string dingId)
         {
             if (!IsAuthenticated)
             {
                 throw new Exceptions.SessionNotAuthenticatedException();
             }
 
-            var stream = await HttpUtility.DownloadFile(new Uri(RingApiBaseUrl, $"dings/{dingId}/recording?auth_token={AuthenticationToken}&api_version=9"), null);
-            return stream;
+            var bytes = await HttpUtility.DownloadFile(new Uri(RingApiBaseUrl, $"dings/{dingId}/recording?auth_token={AuthenticationToken}&api_version=9"), null);
+            return bytes;
         }
 
         /// <summary>
@@ -228,15 +228,27 @@ namespace KoenZomers.Ring.Api
         /// Saves the recording of the provided Ding Id of a doorbot to the provided location
         /// </summary>
         /// <param name="dingId">Id of the doorbot history event to retrieve the recording for</param>
-        public async Task GetDoorbotHistoryRecording(string dingId, string saveAs)
+        /// <param name="fullyQualifiedFilename">Path and filename where you'd like to save the acquired file
+        public async Task GetDoorbotHistoryRecording(string dingId, string fullyQualifiedFilename)
         {
-            using (var stream = await GetDoorbotHistoryRecording(dingId))
+            // If the filename is nothing, leave
+            if (string.IsNullOrWhiteSpace(fullyQualifiedFilename))
             {
-                using (var fileStream = File.Create(saveAs))
-                {
-                    await stream.CopyToAsync(fileStream);
-                }
+                throw new Exception($"The Filename is empty: '{fullyQualifiedFilename}'");
             }
+
+            // get the Directoryname
+            var directoryName = Path.GetDirectoryName(fullyQualifiedFilename);
+
+            // Verify the Directory exists
+            if (!Directory.Exists(directoryName))
+            {
+                throw new Exception($"The Directory path is not valid for saving files: '{directoryName}'");
+            }
+
+            // Get the byte array of the acquired file - bytes are safer to pass-around than streams
+            var bytes = await GetDoorbotHistoryRecording(dingId);
+            File.WriteAllBytes(fullyQualifiedFilename, bytes);
         }
 
         #endregion
