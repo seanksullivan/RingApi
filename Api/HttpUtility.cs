@@ -157,7 +157,7 @@ namespace KoenZomers.Ring.Api
         /// <param name="url">Url to download the file from</param>
         /// <param name="cookieContainer">Cookies which have been recorded for this session</param>
         /// <param name="timeout">Timeout in milliseconds on how long the request may take. Default = 60000 = 60 seconds.</param>
-        /// <returns>Byte array of the file download</returns>
+        /// <returns>Byte array with the file download</returns>
         public static async Task<byte[]> DownloadFile(Uri url, CookieContainer cookieContainer, HttpWebRequest preGeneratedRequest = null, int timeout = 60000)
         {
             // Construct the HttpWebRequest - if not null we will use the supplied HttpWebRequest object - which is probably a Mock

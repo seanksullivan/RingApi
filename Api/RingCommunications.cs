@@ -55,6 +55,11 @@ namespace KoenZomers.Ring.Api
         /// </summary>
         public HttpWebRequest DevicesRequest { get; set; }
 
+        /// <summary>
+        /// Utilized to support unit test via Moq (mocking).
+        /// A mocked HttpWebRequest can be passed-into supply the GetDoorbotHistory() response
+        /// </summary>
+        public HttpWebRequest DoorbotHistoryRequest { get; set; }
         #endregion                                                               
 
         #region Fields
@@ -183,7 +188,7 @@ namespace KoenZomers.Ring.Api
                 throw new Exceptions.SessionNotAuthenticatedException();
             }
 
-            var response = await HttpUtility.GetContents(new Uri(RingApiBaseUrl, $"doorbots/history?auth_token={AuthenticationToken}&api_version=9"), null);
+            var response = await HttpUtility.GetContents(new Uri(RingApiBaseUrl, $"doorbots/history?auth_token={AuthenticationToken}&api_version=9"), null, DoorbotHistoryRequest);
 
             var doorbotHistory = JsonConvert.DeserializeObject<List<Entities.DoorbotHistoryEvent>>(response);
             return doorbotHistory;

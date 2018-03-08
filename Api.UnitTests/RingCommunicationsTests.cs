@@ -10,6 +10,8 @@ using Newtonsoft.Json;
 using KoenZomers.Ring.Api;
 using KoenZomers.Ring.Api.Entities;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace Api.UnitTests
 {
@@ -29,6 +31,8 @@ namespace Api.UnitTests
 
         public static string DevicesResponseFilename => "TestData\\DevicesResponse.json";
 
+        public static string DoorbotHistoryResponseFilename => "TestData\\DoorbotHistoryResponse.json";
+
         public static byte[] ExpectedAuthenticationResponseBytes { get; set; }
 
         public static Session ExpectedAuthenticationSession { get; set; }
@@ -36,6 +40,10 @@ namespace Api.UnitTests
         public static byte[] ExpectedDevicesResponseBytes { get; set; }
 
         public static Devices ExpectedDevices { get; set; }
+
+        public static byte[] ExpectedDoorbotsHistoryResponseBytes { get; set; }
+
+        public static List<DoorbotHistoryEvent> ExpectedDoorbotsHistoryList { get; set; }
         #endregion
 
         [ClassInitialize]
@@ -52,6 +60,12 @@ namespace Api.UnitTests
 
             // Convert the DevicesResponse.json to a Session object - to be utilized for comparison against returned DevicesResponse
             ExpectedDevices = JsonConvert.DeserializeObject<Devices>(Encoding.UTF8.GetString(ExpectedDevicesResponseBytes));
+
+            // Read-in the DoorbotHistoryResponse.json test data - as a byte array, to be utilized by the mocked HttpWebResponse
+            ExpectedDoorbotsHistoryResponseBytes = Encoding.UTF8.GetBytes(File.ReadAllText(DoorbotHistoryResponseFilename));
+
+            // Convert the DoorbotHistoryResponse.json to a DoorbotHistoryEvent object - to be utilized for comparison against returned DoorbotHistoryEvent
+            ExpectedDoorbotsHistoryList = JsonConvert.DeserializeObject<List<DoorbotHistoryEvent>>(Encoding.UTF8.GetString(ExpectedDoorbotsHistoryResponseBytes));
         }
 
         [TestMethod]
@@ -120,11 +134,48 @@ namespace Api.UnitTests
                 DevicesRequest = mockHttpWebRequestDevices
             };
 
+            // Authenticate
             var actualSessionAuthObject = comm.Authenticate().GetAwaiter().GetResult();
 
             var actualDevices = comm.GetRingDevices().GetAwaiter().GetResult();
             Assert.IsTrue(actualDevices.Chimes.Count > 0 && actualDevices.Doorbots.Count > 0, "No doorbots and/or chimes returned");
         }
+
+        [TestMethod]
+        public async Task GetDoorbotsHistory_Verify()
+        {
+            // ARRANGE
+
+            // Mock the HttpWebRequest and HttpWebResponse (which is within the request)- AUTH
+            var mockHttpWebRequestAuth = CreateMockHttpWebRequest(HttpStatusCode.NotModified, "A-OK", ExpectedAuthenticationResponseBytes);
+
+            // Mock the HttpWebRequest and HttpWebResponse (which is within the request)- Devices
+            var mockHttpWebRequestDoorbotHistory = CreateMockHttpWebRequest(HttpStatusCode.NotModified, "A-OK", ExpectedDoorbotsHistoryResponseBytes);
+
+            // ACT
+            var comm = new RingCommunications(Username, Password)
+            {
+                AuthRequest = mockHttpWebRequestAuth,
+                DoorbotHistoryRequest = mockHttpWebRequestDoorbotHistory
+            };
+
+            // Authenticate
+            var actualSessionAuthObject = await comm.Authenticate();
+
+            // Acquire Doorbot History
+            var actualDoorbotsHistoryList = await comm.GetDoorbotsHistory();
+
+            Assert.AreEqual(ExpectedDoorbotsHistoryList.Count, actualDoorbotsHistoryList.Count, "The DoorbotsHistoryList doesn't contain the same number of items as expected");
+
+            // Compare all itesm within the ExpectedList and the actual
+            var cnt = 0;
+            foreach (var expected in ExpectedDoorbotsHistoryList)
+            {
+                ObjectCompare(expected, actualDoorbotsHistoryList[cnt]);
+                cnt++;
+            }
+        }
+
 
         /// <summary>
         /// Compare Objects and all fields within.
@@ -140,7 +191,8 @@ namespace Api.UnitTests
                 object actualValue = property.GetValue(actual, null);
 
                 // if the following types exist, let's get recursive, because they contain one or more of their own fields that we must verify.
-                if (expectedValue is SessionFeatures || expectedValue is Profile)
+                if (expectedValue is SessionFeatures || expectedValue is Profile 
+                    || expectedValue is DoorbotHistoryEventRecording || expectedValue is Doorbot)
                 {
                     ObjectCompare(expectedValue, actualValue);
                     break;

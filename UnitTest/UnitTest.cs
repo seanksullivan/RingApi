@@ -13,12 +13,12 @@ namespace KoenZomers.Ring.UnitTest
         /// <summary>
         /// Username to use to connect to the Ring API
         /// </summary>
-        public string Username => "seanksullivan@gmail.com";
+        public string Username => "someone@gmail.com";
 
         /// <summary>
         /// Password to use to connect to the Ring API
         /// </summary>
-        public string Password => "Blah";
+        public string Password => "password";
 
         /// <summary>
         /// Test the scenario where the authentication should succeed
