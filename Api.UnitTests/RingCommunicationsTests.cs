@@ -69,7 +69,7 @@ namespace Api.UnitTests
         }
 
         [TestMethod]
-        public void Authenticate_ExpectSuccess()
+        public async Task Authenticate_ExpectSuccess()
         {
             // ARRANGE
 
@@ -78,14 +78,14 @@ namespace Api.UnitTests
 
             // ACT
             var comm = new RingCommunications(Username, Password) { AuthRequest = mockHttpWebRequest };
-            var actualAuthenticationSession = comm.Authenticate().GetAwaiter().GetResult();
+            var actualAuthenticationSession = await comm.Authenticate();
 
             //ASSERT
             ObjectCompare(ExpectedAuthenticationSession, actualAuthenticationSession);
         }
 
         [TestMethod]
-        public void Authenticate_VerifyToken()
+        public async Task Authenticate_VerifyToken()
         {
             // ARRANGE
 
@@ -94,14 +94,14 @@ namespace Api.UnitTests
 
             // ACT
             var comm = new RingCommunications(Username, Password) { AuthRequest = mockHttpWebRequest };
-            var actualAuthenticationSession = comm.Authenticate().GetAwaiter().GetResult();
+            var actualAuthenticationSession = await comm.Authenticate();
 
             // ASSERT
             Assert.IsTrue(!string.IsNullOrEmpty(actualAuthenticationSession.Profile.AuthenticationToken), "Failed to authenticate");
         }
 
         [TestMethod]
-        public void Authenticate_VerifyCredentialsEncoded()
+        public async Task Authenticate_VerifyCredentialsEncoded()
         {
             // ARRANGE
 
@@ -110,14 +110,14 @@ namespace Api.UnitTests
 
             // ACT
             var comm = new RingCommunications(Username, Password) { AuthRequest = mockHttpWebRequest };
-            var actualSessionObject = comm.Authenticate().GetAwaiter().GetResult();
+            var actualSessionObject = await comm.Authenticate();
 
             var base64DecodedCredentials = Encoding.UTF8.GetString(Convert.FromBase64String(comm.CredentialsEncoded));
             Assert.AreEqual(base64DecodedCredentials, $"{Username}:{Password}", "Base64 Credential Decoding failed");
         }
 
         [TestMethod]
-        public void GetRingDevices_Verify()
+        public async Task GetRingDevices_Verify()
         {
             // ARRANGE
 
@@ -135,9 +135,9 @@ namespace Api.UnitTests
             };
 
             // Authenticate
-            var actualSessionAuthObject = comm.Authenticate().GetAwaiter().GetResult();
+            var actualSessionAuthObject = await comm.Authenticate();
 
-            var actualDevices = comm.GetRingDevices().GetAwaiter().GetResult();
+            var actualDevices = await comm.GetRingDevices();
             Assert.IsTrue(actualDevices.Chimes.Count > 0 && actualDevices.Doorbots.Count > 0, "No doorbots and/or chimes returned");
         }
 
