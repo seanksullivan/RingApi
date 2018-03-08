@@ -20,7 +20,7 @@ namespace Api.UnitTests
     /// to provide testing and debugging abilities without actual communications with the ring.com Rest API.
     /// </summary>
     [TestClass]
-    public class RingCommunicationsTests
+    public class RingUnitTests
     {
         #region Public Properties
         public static string Username => "Someone@gmail.com";
