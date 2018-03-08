@@ -4,11 +4,12 @@ using System.Configuration;
 using System.Threading.Tasks;
 using System.IO;
 using KoenZomers.Ring.Api;
+using KoenZomers.Ring.Api.Exceptions;
 
-namespace KoenZomers.Ring.UnitTest
+namespace Api.IntegrationTests
 {
     [TestClass]
-    public class UnitTest
+    public class RingIntegrationTests
     {
         /// <summary>
         /// Username to use to connect to the Ring API
@@ -18,7 +19,7 @@ namespace KoenZomers.Ring.UnitTest
         /// <summary>
         /// Password to use to connect to the Ring API
         /// </summary>
-        public string Password => "password";
+        public string Password => "Password";
 
         /// <summary>
         /// Test the scenario where the authentication should succeed
@@ -75,7 +76,7 @@ namespace KoenZomers.Ring.UnitTest
         /// Test if the an SessionNotAuthenticatedException gets thrown when trying to retrieve the Ring devices without authenticating first
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(Api.Exceptions.SessionNotAuthenticatedException))]
+        [ExpectedException(typeof(SessionNotAuthenticatedException))]
         public async Task GetDevicesUnauthenticatedTest()
         {
             var session = new RingCommunications(Username, Password);
