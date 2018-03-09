@@ -1,3 +1,7 @@
+# IMPORTANT - Original Document
+This is the original document obtained when this repo was forked - many things have changed; the document has not been updated to reflect these changes!
+- Sean
+
 # Ring API
 This library for C# will allow you to easily communicate with the Ring API and retrieve details about your Ring doorbells and Ring chimes.
 
