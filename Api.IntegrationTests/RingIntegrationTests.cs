@@ -12,12 +12,12 @@ namespace Api.IntegrationTests
     public class RingIntegrationTests
     {
         /// <summary>
-        /// Username to use to connect to the Ring API
+        /// Username to use to connect to the Ring API - USE YOUR OWN
         /// </summary>
         public string Username => "someone@gmail.com";
 
         /// <summary>
-        /// Password to use to connect to the Ring API
+        /// Password to use to connect to the Ring API - USE YOUR OWN
         /// </summary>
         public string Password => "Password";
 
@@ -111,7 +111,7 @@ namespace Api.IntegrationTests
 
             var tempFilePath = Path.GetTempFileName();
 
-            await session.GetDoorbotHistoryRecording(doorbotHistory[0].Id, tempFilePath);
+            await session.GetDoorbotHistoryRecordingAndCreateFile(doorbotHistory[0].Id, tempFilePath);
 
             File.Delete(tempFilePath);
         }

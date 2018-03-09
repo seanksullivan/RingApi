@@ -33,6 +33,8 @@ namespace Api.UnitTests
 
         public static string DoorbotHistoryResponseFilename => "TestData\\DoorbotHistoryResponse.json";
 
+        public static string DoorbotDownloadFileResponseFilename => "TestData\\TestFile.txt";
+
         public static byte[] ExpectedAuthenticationResponseBytes { get; set; }
 
         public static Session ExpectedAuthenticationSession { get; set; }
@@ -44,6 +46,9 @@ namespace Api.UnitTests
         public static byte[] ExpectedDoorbotsHistoryResponseBytes { get; set; }
 
         public static List<DoorbotHistoryEvent> ExpectedDoorbotsHistoryList { get; set; }
+
+        public static byte[] ExpectedDoorbotsDownloadFileResponseBytes { get; set; }
+
         #endregion
 
         [ClassInitialize]
@@ -66,6 +71,9 @@ namespace Api.UnitTests
 
             // Convert the DoorbotHistoryResponse.json to a DoorbotHistoryEvent object - to be utilized for comparison against returned DoorbotHistoryEvent
             ExpectedDoorbotsHistoryList = JsonConvert.DeserializeObject<List<DoorbotHistoryEvent>>(Encoding.UTF8.GetString(ExpectedDoorbotsHistoryResponseBytes));
+
+            // Read-in the testFile.txt file - to be utilized as a mock'd 'downloaded' file
+            ExpectedDoorbotsDownloadFileResponseBytes = Encoding.UTF8.GetBytes(File.ReadAllText(DoorbotDownloadFileResponseFilename));
         }
 
         [TestMethod]
@@ -176,6 +184,43 @@ namespace Api.UnitTests
             }
         }
 
+        [TestMethod]
+        public async Task GetDoorbotHistoryRecording_Verify()
+        {
+            // ARRANGE
+
+            // Set the path to the acquired 'downlaoaded' file (no file is actually downloaded, thanks to MOQ :) )
+            var tempFilePath = Path.GetTempFileName();
+
+            // Mock the HttpWebRequest and HttpWebResponse (which is within the request)- AUTH
+            var mockHttpWebRequestAuth = CreateMockHttpWebRequest(HttpStatusCode.NotModified, "A-OK", ExpectedAuthenticationResponseBytes);
+
+            // Mock the HttpWebRequest and HttpWebResponse (which is within the request)- Devices
+            var mockHttpWebRequestDoorbotDownloadFile = CreateMockHttpWebRequest(HttpStatusCode.NotModified, "A-OK", ExpectedDoorbotsDownloadFileResponseBytes);
+
+            // ACT
+            var comm = new RingCommunications(Username, Password)
+            {
+                AuthRequest = mockHttpWebRequestAuth,
+                DoorbotFileRequest = mockHttpWebRequestDoorbotDownloadFile
+            };
+
+            // Authenticate
+            var actualSessionAuthObject = await comm.Authenticate();
+
+            // Acquire a Doorbot file
+            await comm.GetDoorbotHistoryRecordingAndCreateFile("1", tempFilePath);
+
+            // ASSERT
+
+            // Read-in the 'expected' download-file bytes
+            var acquiredFileBytes = File.ReadAllBytes(tempFilePath);
+            
+            // Let's cleanup the temp file, regardless of pass-or-fail
+            File.Delete(tempFilePath);
+
+            CollectionAssert.AreEqual(ExpectedDoorbotsDownloadFileResponseBytes, acquiredFileBytes, "Expected file bytes are not matching with the acquired");          
+        }
 
         /// <summary>
         /// Compare Objects and all fields within.

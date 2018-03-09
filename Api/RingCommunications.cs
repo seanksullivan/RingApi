@@ -60,6 +60,12 @@ namespace KoenZomers.Ring.Api
         /// A mocked HttpWebRequest can be passed-into supply the GetDoorbotHistory() response
         /// </summary>
         public HttpWebRequest DoorbotHistoryRequest { get; set; }
+
+        /// <summary>
+        /// Utilized to support unit test via Moq (mocking).
+        /// A mocked HttpWebRequest can be passed-into supply the GetDoorbotHistoryRecording() response
+        /// </summary>
+        public HttpWebRequest DoorbotFileRequest { get; set; }
         #endregion                                                               
 
         #region Fields
@@ -199,7 +205,7 @@ namespace KoenZomers.Ring.Api
         /// </summary>
         /// <param name="doorbotHistoryEvent">The doorbot history event to retrieve the recording for</param>
         /// <returns>Stream containing contents of the recording</returns>
-        public async Task<byte[]> GetDoorbotHistoryRecording(Entities.DoorbotHistoryEvent doorbotHistoryEvent)
+        public async Task<Stream> GetDoorbotHistoryRecording(Entities.DoorbotHistoryEvent doorbotHistoryEvent)
         {
             return await GetDoorbotHistoryRecording(doorbotHistoryEvent.Id);
         }
@@ -209,15 +215,22 @@ namespace KoenZomers.Ring.Api
         /// </summary>
         /// <param name="dingId">Id of the doorbot history event to retrieve the recording for</param>
         /// <returns>Stream containing contents of the recording</returns>
-        public async Task<byte[]> GetDoorbotHistoryRecording(string dingId)
+        public async Task<Stream> GetDoorbotHistoryRecording(string dingId)
         {
             if (!IsAuthenticated)
             {
                 throw new Exceptions.SessionNotAuthenticatedException();
             }
 
-            var bytes = await HttpUtility.DownloadFile(new Uri(RingApiBaseUrl, $"dings/{dingId}/recording?auth_token={AuthenticationToken}&api_version=9"), null);
-            return bytes;
+            var connectedStream = await HttpUtility.DownloadFile(
+                new Uri(RingApiBaseUrl, $"dings/{dingId}/recording?auth_token={AuthenticationToken}&api_version=9"), 
+                null, DoorbotFileRequest);
+            return connectedStream;
+        }
+
+        public Uri GetDoorbotHistoryRecordingUri(string dingId)
+        {
+            return new Uri(RingApiBaseUrl, $"dings/{dingId}/recording?auth_token={AuthenticationToken}&api_version=9");
         }
 
         /// <summary>
@@ -226,7 +239,7 @@ namespace KoenZomers.Ring.Api
         /// <param name="doorbotHistoryEvent">The doorbot history event to retrieve the recording for</param>
         public async Task GetDoorbotHistoryRecording(Entities.DoorbotHistoryEvent doorbotHistoryEvent, string saveAs)
         {
-            await GetDoorbotHistoryRecording(doorbotHistoryEvent.Id, saveAs);
+            await GetDoorbotHistoryRecordingAndCreateFile(doorbotHistoryEvent.Id, saveAs);
         }
 
         /// <summary>
@@ -234,7 +247,7 @@ namespace KoenZomers.Ring.Api
         /// </summary>
         /// <param name="dingId">Id of the doorbot history event to retrieve the recording for</param>
         /// <param name="fullyQualifiedFilename">Path and filename where you'd like to save the acquired file
-        public async Task GetDoorbotHistoryRecording(string dingId, string fullyQualifiedFilename)
+        public async Task GetDoorbotHistoryRecordingAndCreateFile(string dingId, string fullyQualifiedFilename)
         {
             // If the filename is nothing, leave
             if (string.IsNullOrWhiteSpace(fullyQualifiedFilename))
@@ -251,9 +264,20 @@ namespace KoenZomers.Ring.Api
                 throw new Exception($"The Directory path is not valid for saving files: '{directoryName}'");
             }
 
-            // Get the byte array of the acquired file - bytes are safer to pass-around than streams
-            var bytes = await GetDoorbotHistoryRecording(dingId);
-            File.WriteAllBytes(fullyQualifiedFilename, bytes);
+            // Get the connected stream for the video
+            var connectedStream = await GetDoorbotHistoryRecording(dingId);
+
+            try
+            {
+                using (var fileStream = File.Create(fullyQualifiedFilename))
+                {
+                    await connectedStream.CopyToAsync(fileStream);
+                }
+            }
+            finally
+            {
+                if (connectedStream != null) connectedStream.Close();
+            }
         }
 
         #endregion
